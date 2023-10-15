@@ -1,7 +1,7 @@
 import torch, uuid
 import os, sys, shutil
 from src.utils.preprocess import CropAndExtract
-from src.test_audio2coeff import Audio2Coeff  
+from src.test_audio2coeff import Audio2Coeff
 from src.facerender.animate import AnimateFromCoeff
 from src.generate_batch import get_data
 from src.generate_facerender_batch import get_facerender_data
@@ -24,18 +24,18 @@ class SadTalker():
             device = "cuda"
         else:
             device = "cpu"
-        
+
         self.device = device
 
         os.environ['TORCH_HOME']= checkpoint_path
 
         self.checkpoint_path = checkpoint_path
         self.config_path = config_path
-      
 
-    def test(self, source_image, driven_audio, preprocess='crop', 
-        still_mode=False,  use_enhancer=False, batch_size=1, size=256, 
-        pose_style = 0, exp_scale=1.0, 
+
+    def test(self, source_image, driven_audio, preprocess='crop',
+        still_mode=False,  use_enhancer=False, batch_size=1, size=256,
+        pose_style = 0, exp_scale=1.0,
         use_ref_video = False,
         ref_video = None,
         ref_info = None,
@@ -45,7 +45,7 @@ class SadTalker():
 
         self.sadtalker_paths = init_path(self.checkpoint_path, self.config_path, size, False, preprocess)
         print(self.sadtalker_paths)
-            
+
         self.audio_to_coeff = Audio2Coeff(self.sadtalker_paths, self.device)
         self.preprocess_model = CropAndExtract(self.sadtalker_paths, self.device)
         self.animate_from_coeff = AnimateFromCoeff(self.sadtalker_paths, self.device)
@@ -58,11 +58,11 @@ class SadTalker():
         os.makedirs(input_dir, exist_ok=True)
 
         print(source_image)
-        pic_path = os.path.join(input_dir, os.path.basename(source_image)) 
+        pic_path = os.path.join(input_dir, os.path.basename(source_image))
         shutil.move(source_image, input_dir)
 
         if driven_audio is not None and os.path.isfile(driven_audio):
-            audio_path = os.path.join(input_dir, os.path.basename(driven_audio))  
+            audio_path = os.path.join(input_dir, os.path.basename(driven_audio))
 
             #### mp3 to wav
             if '.mp3' in audio_path:
@@ -86,15 +86,21 @@ class SadTalker():
             print('new audiopath:',audio_path)
             # if ref_video contains audio, set the audio from ref_video.
             cmd = r"ffmpeg -y -hide_banner -loglevel error -i %s %s"%(ref_video, audio_path)
-            os.system(cmd)        
+            os.system(cmd)
 
         os.makedirs(save_dir, exist_ok=True)
-        
+
         #crop image and extract 3dmm from image
         first_frame_dir = os.path.join(save_dir, 'first_frame_dir')
         os.makedirs(first_frame_dir, exist_ok=True)
-        first_coeff_path, crop_pic_path, crop_info = self.preprocess_model.generate(pic_path, first_frame_dir, preprocess, True, size)
-        
+        first_coeff_path, crop_pic_path, crop_info = self.preprocess_model.generate(
+            pic_path,
+            first_frame_dir,
+            preprocess,
+            True,
+            size
+        )
+
         if first_coeff_path is None:
             raise AttributeError("No face is detected")
 
@@ -118,7 +124,7 @@ class SadTalker():
             elif ref_info == 'pose+blink':
                 ref_pose_coeff_path = ref_video_coeff_path
                 ref_eyeblink_coeff_path = ref_video_coeff_path
-            elif ref_info == 'all':            
+            elif ref_info == 'all':
                 ref_pose_coeff_path = None
                 ref_eyeblink_coeff_path = None
             else:
@@ -147,9 +153,8 @@ class SadTalker():
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
             torch.cuda.synchronize()
-            
+
         import gc; gc.collect()
-        
+
         return return_path
 
-    

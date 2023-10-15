@@ -48,31 +48,6 @@ def sadtalker_demo(checkpoint_path='checkpoints', config_path='src/config', warp
 
                         with gr.Row():
                             driven_audio = gr.Audio(label="Input audio", source="upload", type="filepath")
-                            driven_audio_no = gr.Audio(label="Use IDLE mode, no audio is required", source="upload", type="filepath", visible=False)
-
-                            with gr.Column():
-                                use_idle_mode = gr.Checkbox(label="Use Idle Animation")
-                                length_of_audio = gr.Number(value=5, label="The length(seconds) of the generated video.")
-                                use_idle_mode.change(toggle_audio_file, inputs=use_idle_mode, outputs=[driven_audio, driven_audio_no]) # todo
-
-                                if sys.platform != 'win32' and not in_webui:
-                                    with gr.Accordion('Generate Audio From TTS', open=False):
-                                        from src.utils.text2speech import TTSTalker
-                                        tts_talker = TTSTalker()
-                                        with gr.Column(variant='panel'):
-                                            input_text = gr.Textbox(label="Generating audio from text", lines=5, placeholder="please enter some text here, we genreate the audio from text using @Coqui.ai TTS.")
-                                            tts = gr.Button('Generate audio',elem_id="sadtalker_audio_generate", variant='primary')
-                                            tts.click(fn=tts_talker.test, inputs=[input_text], outputs=[driven_audio])
-
-                        with gr.Row():
-                            ref_video = gr.Video(label="Reference Video", source="upload", type="filepath", elem_id="vidref").style(width=512)
-
-                            with gr.Column():
-                                use_ref_video = gr.Checkbox(label="Use Reference Video")
-                                ref_info = gr.Radio(['pose', 'blink','pose+blink', 'all'], value='pose', label='Reference Video',info="How to borrow from reference Video?((fully transfer, aka, video driving mode))")
-
-                            ref_video.change(ref_video_fn, inputs=ref_video, outputs=[use_ref_video]) # todo
-
 
             with gr.Column(variant='panel'): 
                 with gr.Tabs(elem_id="sadtalker_checkbox"):

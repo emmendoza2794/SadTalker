@@ -43,8 +43,14 @@ def main(args):
     first_frame_dir = os.path.join(save_dir, 'first_frame_dir')
     os.makedirs(first_frame_dir, exist_ok=True)
     print('3DMM Extraction for source image')
-    first_coeff_path, crop_pic_path, crop_info =  preprocess_model.generate(pic_path, first_frame_dir, args.preprocess,\
-                                                                             source_image_flag=True, pic_size=args.size)
+    first_coeff_path, crop_pic_path, crop_info = preprocess_model.generate(
+        pic_path,
+        first_frame_dir,
+        args.preprocess,
+        source_image_flag=True,
+        pic_size=args.size
+    )
+
     if first_coeff_path is None:
         print("Can't get the coeffs of the input")
         return
@@ -80,12 +86,31 @@ def main(args):
         gen_composed_video(args, device, first_coeff_path, coeff_path, audio_path, os.path.join(save_dir, '3dface.mp4'))
     
     #coeff2video
-    data = get_facerender_data(coeff_path, crop_pic_path, first_coeff_path, audio_path, 
-                                batch_size, input_yaw_list, input_pitch_list, input_roll_list,
-                                expression_scale=args.expression_scale, still_mode=args.still, preprocess=args.preprocess, size=args.size)
+    data = get_facerender_data(
+        coeff_path,
+        crop_pic_path,
+        first_coeff_path,
+        audio_path,
+        batch_size,
+        input_yaw_list,
+        input_pitch_list,
+        input_roll_list,
+        expression_scale=args.expression_scale,
+        still_mode=args.still,
+        preprocess=args.preprocess,
+        size=args.size
+    )
     
-    result = animate_from_coeff.generate(data, save_dir, pic_path, crop_info, \
-                                enhancer=args.enhancer, background_enhancer=args.background_enhancer, preprocess=args.preprocess, img_size=args.size)
+    result = animate_from_coeff.generate(
+        data,
+        save_dir,
+        pic_path,
+        crop_info,
+        enhancer=args.enhancer,
+        background_enhancer=args.background_enhancer,
+        preprocess=args.preprocess,
+        img_size=args.size
+    )
     
     shutil.move(result, save_dir+'.mp4')
     print('The generated video is named:', save_dir+'.mp4')
@@ -104,9 +129,9 @@ if __name__ == '__main__':
     parser.add_argument("--checkpoint_dir", default='./checkpoints', help="path to output")
     parser.add_argument("--result_dir", default='./results', help="path to output")
     parser.add_argument("--pose_style", type=int, default=0,  help="input pose style from [0, 46)")
-    parser.add_argument("--batch_size", type=int, default=2,  help="the batch size of facerender")
+    parser.add_argument("--batch_size", type=int, default=1,  help="the batch size of facerender")
     parser.add_argument("--size", type=int, default=256,  help="the image size of the facerender")
-    parser.add_argument("--expression_scale", type=float, default=1.,  help="the batch size of facerender")
+    parser.add_argument("--expression_scale", type=float, default=1.5,  help="the batch size of facerender")
     parser.add_argument('--input_yaw', nargs='+', type=int, default=None, help="the input yaw degree of the user ")
     parser.add_argument('--input_pitch', nargs='+', type=int, default=None, help="the input pitch degree of the user")
     parser.add_argument('--input_roll', nargs='+', type=int, default=None, help="the input roll degree of the user")
@@ -116,8 +141,8 @@ if __name__ == '__main__':
     parser.add_argument("--face3dvis", action="store_true", help="generate 3d face and 3d landmarks") 
     parser.add_argument("--still", action="store_true", help="can crop back to the original videos for the full body aniamtion") 
     parser.add_argument("--preprocess", default='crop', choices=['crop', 'extcrop', 'resize', 'full', 'extfull'], help="how to preprocess the images" ) 
-    parser.add_argument("--verbose",action="store_true", help="saving the intermedia output or not" ) 
-    parser.add_argument("--old_version",action="store_true", help="use the pth other than safetensor version" ) 
+    parser.add_argument("--verbose", action="store_true", help="saving the intermedia output or not" )
+    parser.add_argument("--old_version", action="store_true", help="use the pth other than safetensor version" )
 
 
     # net structure and parameters
