@@ -1,4 +1,7 @@
 import os
+import shutil
+import sys
+
 import cv2
 import yaml
 import numpy as np
@@ -193,9 +196,19 @@ class AnimateFromCoeff():
 
         frame_num = x['frame_num']
 
-        predictions_video = make_animation(source_image, source_semantics, target_semantics,
-                                           self.generator, self.kp_extractor, self.he_estimator, self.mapping,
-                                           yaw_c_seq, pitch_c_seq, roll_c_seq, use_exp=True)
+        predictions_video = make_animation(
+            source_image,
+            source_semantics,
+            target_semantics,
+            self.generator,
+            self.kp_extractor,
+            self.he_estimator,
+            self.mapping,
+            yaw_c_seq,
+            pitch_c_seq,
+            roll_c_seq,
+            use_exp=True
+        )
 
         predictions_video = predictions_video.reshape((-1,) + predictions_video.shape[2:])
         predictions_video = predictions_video[:frame_num]
@@ -237,13 +250,21 @@ class AnimateFromCoeff():
         print(f'The generated video is named {video_save_dir}/{video_name}')
 
         if 'full' in preprocess.lower():
-            # only add watermark to the full image.
             video_name_full = x['video_name'] + '_full.mp4'
             full_video_path = os.path.join(video_save_dir, video_name_full)
             return_path = full_video_path
-            paste_pic(path, pic_path, crop_info, new_audio_path, full_video_path,
-                      extended_crop=True if 'ext' in preprocess.lower() else False)
+
+            paste_pic(
+                path,
+                pic_path,
+                crop_info,
+                new_audio_path,
+                full_video_path,
+                extended_crop=True if 'ext' in preprocess.lower() else False
+            )
+
             print(f'The generated video is named {video_save_dir}/{video_name_full}')
+
         else:
             full_video_path = av_path
 
@@ -269,8 +290,9 @@ class AnimateFromCoeff():
                     print('error in enhancer_generator_with_len')
                     return
 
-                cmd = f"ffmpeg -framerate 25 -i {av_path_enhancer_frames}/f-%04d.jpg -c:v libx264 -pix_fmt yuv420p '{enhanced_path}'"
+                cmd = f"ffmpeg -loglevel error -framerate 25 -i {av_path_enhancer_frames}/f-%04d.png -b:v 7000k -c:v libx264 -pix_fmt yuv420p '{enhanced_path}'"
                 os.system(cmd)
+                shutil.rmtree(av_path_enhancer_frames)
 
                 save_video_with_watermark(enhanced_path, new_audio_path, av_path_enhancer, watermark=False)
                 print(f'The generated video is named {video_save_dir}/{video_name_enhancer}')

@@ -47,10 +47,16 @@ def enhancer_generator_no_len(images, method='gfpgan', bg_upsampler='realesrgan'
     to be stored in memory at the same time. This can save tons of RAM compared to
     the enhancer function. """
 
+    dir_frames_f = os.path.join(save_dir, 'f')
+    os.makedirs(str(dir_frames_f), exist_ok=True)
+
     print('face enhancer....')
     if not isinstance(images, list) and os.path.isfile(images):  # handle video to images
-        images = load_video_to_cv2(images)
+        print(images)
+        # images = load_video_to_cv2(images)
 
+        cmd = f"ffmpeg -loglevel error -i '{images}' {save_dir}/f/%04d.png"
+        os.system(cmd)
     # ------------------------ set up GFPGAN restorer ------------------------
     if method == 'gfpgan':
         arch = 'clean'
@@ -70,28 +76,6 @@ def enhancer_generator_no_len(images, method='gfpgan', bg_upsampler='realesrgan'
     else:
         raise ValueError(f'Wrong model version {method}.')
 
-    # ------------------------ set up background upsampler ------------------------
-    if bg_upsampler == 'realesrgan':
-        if not torch.cuda.is_available():  # CPU
-            import warnings
-            warnings.warn('The unoptimized RealESRGAN is slow on CPU. We do not use it. '
-                          'If you really want to use it, please modify the corresponding codes.')
-            bg_upsampler = None
-        else:
-            from basicsr.archs.rrdbnet_arch import RRDBNet
-            from realesrgan import RealESRGANer
-            model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2)
-            bg_upsampler = RealESRGANer(
-                scale=2,
-                model_path='https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth',
-                model=model,
-                tile=400,
-                tile_pad=10,
-                pre_pad=0,
-                half=True)  # need to set False in CPU mode
-    else:
-        bg_upsampler = None
-
     # determine model paths
     model_path = os.path.join('gfpgan/weights', model_name + '.pth')
 
@@ -107,14 +91,17 @@ def enhancer_generator_no_len(images, method='gfpgan', bg_upsampler='realesrgan'
         upscale=1,
         arch=arch,
         channel_multiplier=channel_multiplier,
-        bg_upsampler=bg_upsampler
+        bg_upsampler=None
+    )
+
+    images_list = sorted(
+        [os.path.join(dir_frames_f, frame) for frame in os.listdir(dir_frames_f) if frame.endswith('.png')]
     )
 
     # ------------------------ restore ------------------------
-    for idx in tqdm(range(len(images)), 'Face Enhancer:'):
-        img = cv2.cvtColor(images[idx], cv2.COLOR_RGB2BGR)
+    for idx in tqdm(range(len(images_list)), 'Face Enhancer:'):
+        img = cv2.imread(images_list[idx])
 
-        # restore faces and background if necessary
         cropped_faces, restored_faces, r_img = restorer.enhance(
             img,
             has_aligned=False,
@@ -122,7 +109,7 @@ def enhancer_generator_no_len(images, method='gfpgan', bg_upsampler='realesrgan'
             paste_back=True
         )
 
-        cv2.imwrite(f'{save_dir}/f-{idx:04d}.jpg', r_img)
+        cv2.imwrite(f'{save_dir}/f-{idx:04d}.png', r_img)
 
         # r_img = cv2.cvtColor(r_img, cv2.COLOR_BGR2RGB)
 
